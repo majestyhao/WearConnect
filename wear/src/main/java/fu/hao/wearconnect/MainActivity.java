@@ -31,7 +31,7 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
         setContentView(R.layout.activity_main);
         mListView = (ListView) findViewById(R.id.list);
 
-        mAdapter = new ArrayAdapter<String>( this, R.layout.list_item );
+        mAdapter = new ArrayAdapter<String>(this, R.layout.list_item);
         mListView.setAdapter( mAdapter );
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -109,7 +109,7 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
 
     @Override
     public void onConnected(Bundle bundle) {
-        Wearable.MessageApi.addListener( mApiClient, this );
+        Wearable.MessageApi.addListener( mApiClient, this);
     }
 
     @Override

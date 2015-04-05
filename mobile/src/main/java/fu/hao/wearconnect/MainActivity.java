@@ -1,5 +1,6 @@
 package fu.hao.wearconnect;
 
+// https://www.binpress.com/tutorial/a-guide-to-the-android-wear-message-api/152
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -20,7 +21,7 @@ import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, MessageApi.MessageListener {
+public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks{
 
     private static final String TAG = "MainActivity";
     private static final String START_ACTIVITY = "/start_activity";
@@ -128,15 +129,15 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     }
 
-    @Override
-    public void onMessageReceived(final MessageEvent messageEvent) {
-        runOnUiThread( new Runnable() {
-            @Override
-            public void run() {
-                if( messageEvent.getPath().equalsIgnoreCase(WEAR_MESSAGE_PATH)) {
-                    Log.d(TAG, "onMessageReceived: " + WEAR_MESSAGE_PATH);
-                }
-            }
-        });
-    }
+//    @Override
+//    public void onMessageReceived(final MessageEvent messageEvent) {
+//        runOnUiThread( new Runnable() {
+//            @Override
+//            public void run() {
+//                if( messageEvent.getPath().equalsIgnoreCase(WEAR_MESSAGE_PATH)) {
+//                    Log.d(TAG, "onMessageReceived: " + WEAR_MESSAGE_PATH);
+//                }
+//            }
+//        });
+//    }
 }
