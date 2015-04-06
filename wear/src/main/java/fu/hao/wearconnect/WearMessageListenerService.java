@@ -17,6 +17,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
@@ -30,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.List;
 
 public class WearMessageListenerService extends WearableListenerService implements SensorEventListener {
@@ -217,27 +219,31 @@ public class WearMessageListenerService extends WearableListenerService implemen
                 dir.mkdirs();
             } // Create folder if needed
             final File file = new File(dir, fileName);
-            if (file.exists()) Log.d(TAG, "File Found!");
+            if (file.exists()) {
+                Log.d(TAG, "File Found!");
 
-            // Read the text file into a byte array
-            FileInputStream fileInputStream = null;
-            byte[] bFile = new byte[(int) file.length()];
-            try {
-                fileInputStream = new FileInputStream(file);
-                fileInputStream.read(bFile);
-                fileInputStream.close();
-            } catch (Exception e) {
+                // Read the text file into a byte array
+                FileInputStream fileInputStream = null;
+                byte[] bFile = new byte[(int) file.length()];
+                try {
+                    fileInputStream = new FileInputStream(file);
+                    fileInputStream.read(bFile);
+                    fileInputStream.close();
+                } catch (Exception e) {
+                }
+
+                // Create an Asset from the byte array, and send it via the DataApi
+                Asset asset = Asset.createFromBytes(bFile);
+                PutDataMapRequest request = PutDataMapRequest.create("/txt");
+                DataMap map = request.getDataMap();
+                map.putLong("time", new Date().getTime()); // MOST IMPORTANT LINE FOR TIMESTAMP
+                map.putAsset("com.example.company.key.TXT", asset);
+                Wearable.DataApi.putDataItem(mApiClient, request.asPutDataRequest());
+                Log.d(TAG, "File Sent!");
+                Toast.makeText(getBaseContext(), "File Sent!", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.d(TAG, "No Such File!");
             }
-
-            // Create an Asset from the byte array, and send it via the DataApi
-            Asset asset = Asset.createFromBytes(bFile);
-            PutDataMapRequest dataMap = PutDataMapRequest.create("/txt");
-            dataMap.getDataMap().putAsset("com.example.company.key.TXT", asset);
-            PutDataRequest request = dataMap.asPutDataRequest();
-            PendingResult<DataApi.DataItemResult> pendingResult = Wearable.DataApi
-                    .putDataItem(mApiClient, request);
-            Log.d(TAG, "File Sent!");
-            Toast.makeText(getBaseContext(), "File Sent!", Toast.LENGTH_SHORT).show();
 
     }
 

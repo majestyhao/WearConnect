@@ -31,6 +31,7 @@ import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+import com.google.android.gms.wearable.WearableListenerService;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -65,7 +66,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     boolean stopFlag = false;
 
-    private static String fileName;
+    public static String fileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -212,59 +213,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     }
 
-    public void onDataChanged(DataEventBuffer dataEvents) {
-        for (DataEvent event : dataEvents) {
-            if (event.getType() == DataEvent.TYPE_CHANGED &&
-                    event.getDataItem().getUri().getPath().equals("/txt"))
-            {
-                // Get the Asset object
-                DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
-                Asset asset = dataMapItem.getDataMap().getAsset("com.example.company.key.TXT");
-
-                ConnectionResult result =
-                        mApiClient.blockingConnect(10000, TimeUnit.MILLISECONDS);
-                if (!result.isSuccess()) {return;}
-
-                // Convert asset into a file descriptor and block until it's ready
-                InputStream assetInputStream = Wearable.DataApi.getFdForAsset(
-                        mApiClient, asset).await().getInputStream();
-                mApiClient.disconnect();
-                if (assetInputStream == null) { return; }
-
-                // Get folder for output
-                File sdcard = Environment.getExternalStorageDirectory();
-                File dir = new File(sdcard.getAbsolutePath() + "/CCS_Dataset/");
-                if (!dir.exists()) {dir.mkdirs();} // Create folder if needed
-
-                // Read data from the Asset and write it to a file on external storage
-                final File file = new File(dir, fileName);
-                try {
-                    FileOutputStream fOut = new FileOutputStream(file);
-                    int nRead;
-                    byte[] data = new byte[16384];
-                    while ((nRead = assetInputStream.read(data, 0, data.length)) != -1) {
-                        fOut.write(data, 0, nRead);
-                    }
-
-                    fOut.flush();
-                    fOut.close();
-                    Log.d(TAG, "File Received!");
-                    Toast.makeText(getBaseContext(), "File Received!", Toast.LENGTH_SHORT).show();
-                }
-                catch (Exception e)
-                {
-                }
-
-                // Rescan folder to make it appear
-                try {
-                    String[] paths = new String[1];
-                    paths[0] = file.getAbsolutePath();
-                    MediaScannerConnection.scanFile(this, paths, null, null);
-                } catch (Exception e) {
-                }
-            }
-        }
-    }
 
 //    @Override
 //    public void onMessageReceived(final MessageEvent messageEvent) {
