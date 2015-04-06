@@ -245,7 +245,7 @@ public class ReadoutActivity extends Activity implements View.OnTouchListener {
 
 		fitYAxis(currentEvent);
 
-		// read the sensor reading and add then into channel for plot
+		// read the sensor reading and add them into channel for plot
 		for (int i = 0; i < channel.length; i++) {
 			if (channel[i] != null) {
 				channel[i].add(xTick, currentEvent.values[i]);

@@ -3,22 +3,44 @@ package fu.hao.wearconnect;
 // https://www.binpress.com/tutorial/a-guide-to-the-android-wear-message-api/152
 
 import android.app.Activity;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.TextUtils;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.wearable.Asset;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 
 public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks{
@@ -26,6 +48,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private static final String TAG = "MainActivity";
     private static final String START_ACTIVITY = "/start_activity";
     private static final String WEAR_MESSAGE_PATH = "/message";
+    private static final String STREAMING_PATH = "/streaming";
+    private static final String FILE_TRANSFER = "/transFile";
 
     private GoogleApiClient mApiClient;
 
@@ -34,6 +58,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private ListView mListView;
     private EditText mEditText;
     private Button mSendButton;
+
+    private EditText txtData;
+    private Button startButton;
+    private Button stopButton;
+
+    boolean stopFlag = false;
+
+    private static String fileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +128,58 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 }
             }
         });
+
+
+        // file name to be entered
+        txtData = (EditText) findViewById(R.id.editText2);
+        txtData.setHint("Enter File Name here...");
+
+        // start button
+        startButton = (Button) findViewById(R.id.button1);
+        startButton.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                try {
+                    // start recording the sensor data
+                    Date date = new Date();
+                    CharSequence sdate = DateFormat.format("hh_mm_ss_MMMM_d", date.getTime());
+                    fileName = new String(txtData.getText() + String.valueOf(sdate)  + ".txt");
+                    sendMessage(STREAMING_PATH, fileName);
+                    Toast.makeText(getBaseContext(), "Start recording the data set", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                } finally {
+                    stopFlag = false;
+                }
+            startButton.setEnabled(false);
+                stopButton.setEnabled(true);
+            }
+        }
+        );
+
+
+        // stop button
+        stopButton = (Button) findViewById(R.id.button2);
+        stopButton.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                // stop recording the sensor data
+                try {
+                    stopFlag = true;
+                    //sendMessage(STREAMING_PATH, "STOP_NOW");
+                    //Toast.makeText(getBaseContext(), "Done recording the data set", Toast.LENGTH_SHORT).show();
+                    sendMessage(FILE_TRANSFER, "transfer");
+                    Toast.makeText(getBaseContext(), "Done transfer the data set", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+                startButton.setEnabled(true);
+                stopButton.setEnabled(false);
+            }
+        });
+        stopButton.setEnabled(false);
     }
+
 
     private void sendMessage(final String path, final String text) {
         new Thread(new Runnable() {
@@ -127,6 +210,60 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     public void onConnectionSuspended(int i) {
 
+    }
+
+    public void onDataChanged(DataEventBuffer dataEvents) {
+        for (DataEvent event : dataEvents) {
+            if (event.getType() == DataEvent.TYPE_CHANGED &&
+                    event.getDataItem().getUri().getPath().equals("/txt"))
+            {
+                // Get the Asset object
+                DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
+                Asset asset = dataMapItem.getDataMap().getAsset("com.example.company.key.TXT");
+
+                ConnectionResult result =
+                        mApiClient.blockingConnect(10000, TimeUnit.MILLISECONDS);
+                if (!result.isSuccess()) {return;}
+
+                // Convert asset into a file descriptor and block until it's ready
+                InputStream assetInputStream = Wearable.DataApi.getFdForAsset(
+                        mApiClient, asset).await().getInputStream();
+                mApiClient.disconnect();
+                if (assetInputStream == null) { return; }
+
+                // Get folder for output
+                File sdcard = Environment.getExternalStorageDirectory();
+                File dir = new File(sdcard.getAbsolutePath() + "/CCS_Dataset/");
+                if (!dir.exists()) {dir.mkdirs();} // Create folder if needed
+
+                // Read data from the Asset and write it to a file on external storage
+                final File file = new File(dir, fileName);
+                try {
+                    FileOutputStream fOut = new FileOutputStream(file);
+                    int nRead;
+                    byte[] data = new byte[16384];
+                    while ((nRead = assetInputStream.read(data, 0, data.length)) != -1) {
+                        fOut.write(data, 0, nRead);
+                    }
+
+                    fOut.flush();
+                    fOut.close();
+                    Log.d(TAG, "File Received!");
+                    Toast.makeText(getBaseContext(), "File Received!", Toast.LENGTH_SHORT).show();
+                }
+                catch (Exception e)
+                {
+                }
+
+                // Rescan folder to make it appear
+                try {
+                    String[] paths = new String[1];
+                    paths[0] = file.getAbsolutePath();
+                    MediaScannerConnection.scanFile(this, paths, null, null);
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 
 //    @Override
