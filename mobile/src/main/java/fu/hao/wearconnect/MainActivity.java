@@ -151,7 +151,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                                                  } finally {
                                                      stopFlag = false;
                                                  }
-                                                 startButton.setEnabled(true);
+                                                 //startButton.setEnabled(true);
                                                  connectButton.setEnabled(false);
                                              }
                                          }
@@ -179,7 +179,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                                            }
                                        }
         );
-        startButton.setEnabled(false);
+        //startButton.setEnabled(false);
 
         // stop button
         stopButton = (Button) findViewById(R.id.button2);

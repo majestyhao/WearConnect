@@ -12,12 +12,12 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.Asset;
-import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
@@ -52,6 +52,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wear_message_listener);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initGoogleApiClient();
     }
 
@@ -271,6 +272,16 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Wearable.DataApi.putDataItem(mApiClient, request.asPutDataRequest());
             Log.d(TAG, "File Sent!");
             Toast.makeText(getBaseContext(), "File Sent!", Toast.LENGTH_SHORT).show();
+            file.delete();
+            try {
+                fileInputStream.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (NullPointerException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         } else {
             Log.d(TAG, "No Such File!");
         }
