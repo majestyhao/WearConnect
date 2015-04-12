@@ -44,11 +44,12 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks{
+public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks {
 
     private static final String TAG = "MainActivity";
     private static final String START_ACTIVITY = "/start_activity";
     private static final String WEAR_MESSAGE_PATH = "/message";
+    private static final String CONNECTED_PATH = "/connecting";
     private static final String STREAMING_PATH = "/streaming";
     private static final String FILE_TRANSFER = "/transFile";
 
@@ -61,6 +62,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private Button mSendButton;
 
     private EditText txtData;
+    private Button connectButton;
     private Button startButton;
     private Button stopButton;
 
@@ -85,6 +87,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         Log.d(TAG, "onConnected: " + connectionHint);
                         // Now you can use the Data Layer API
                     }
+
                     @Override
                     public void onConnectionSuspended(int cause) {
                         Log.d(TAG, "onConnectionSuspended: " + cause);
@@ -135,29 +138,48 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         txtData = (EditText) findViewById(R.id.editText2);
         txtData.setHint("Enter File Name here...");
 
+        // connect button
+        connectButton = (Button) findViewById(R.id.button);
+        connectButton.setOnClickListener(new View.OnClickListener() {
+
+                                             public void onClick(View v) {
+                                                 try {
+                                                     sendMessage(CONNECTED_PATH, "Hello Wear!");
+                                                     Toast.makeText(getBaseContext(), "Connected to Android Wear!", Toast.LENGTH_SHORT).show();
+                                                 } catch (Exception e) {
+                                                     Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                 } finally {
+                                                     stopFlag = false;
+                                                 }
+                                                 startButton.setEnabled(true);
+                                                 connectButton.setEnabled(false);
+                                             }
+                                         }
+        );
+
         // start button
         startButton = (Button) findViewById(R.id.button1);
         startButton.setOnClickListener(new View.OnClickListener() {
 
-            public void onClick(View v) {
-                try {
-                    // start recording the sensor data
-                    Date date = new Date();
-                    CharSequence sdate = DateFormat.format("hh_mm_ss_MMMM_d", date.getTime());
-                    fileName = new String(txtData.getText() + String.valueOf(sdate)  + ".txt");
-                    sendMessage(STREAMING_PATH, fileName);
-                    Toast.makeText(getBaseContext(), "Start recording the data set", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                } finally {
-                    stopFlag = false;
-                }
-            startButton.setEnabled(false);
-                stopButton.setEnabled(true);
-            }
-        }
+                                           public void onClick(View v) {
+                                               try {
+                                                   // start recording the sensor data
+                                                   Date date = new Date();
+                                                   CharSequence sdate = DateFormat.format("hh_mm_ss_MMMM_d", date.getTime());
+                                                   fileName = new String(txtData.getText() + String.valueOf(sdate) + ".txt");
+                                                   sendMessage(STREAMING_PATH, fileName);
+                                                   Toast.makeText(getBaseContext(), "Start recording the data set", Toast.LENGTH_SHORT).show();
+                                               } catch (Exception e) {
+                                                   Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                                               } finally {
+                                                   stopFlag = false;
+                                               }
+                                               startButton.setEnabled(false);
+                                               stopButton.setEnabled(true);
+                                           }
+                                       }
         );
-
+        startButton.setEnabled(false);
 
         // stop button
         stopButton = (Button) findViewById(R.id.button2);
@@ -174,7 +196,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 } catch (Exception e) {
                     Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
-                startButton.setEnabled(true);
+                connectButton.setEnabled(true);
+                //startButton.setEnabled(false);
                 stopButton.setEnabled(false);
             }
         });

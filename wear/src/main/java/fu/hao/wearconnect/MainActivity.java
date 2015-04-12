@@ -59,7 +59,7 @@ public class MainActivity extends Activity implements MessageApi.MessageListener
                     }
                 })
                 .addApi(Wearable.API)
-                .addConnectionCallbacks( this )
+                .addConnectionCallbacks(this)
                 .build();
 
         if( mApiClient != null && !( mApiClient.isConnected() || mApiClient.isConnecting() ) )
