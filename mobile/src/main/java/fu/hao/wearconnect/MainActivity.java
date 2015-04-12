@@ -151,7 +151,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                                                  } finally {
                                                      stopFlag = false;
                                                  }
-                                                 //startButton.setEnabled(true);
+                                                 startButton.setEnabled(true);
                                                  connectButton.setEnabled(false);
                                              }
                                          }
@@ -179,7 +179,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                                            }
                                        }
         );
-        //startButton.setEnabled(false);
+        //startButton.setEnabled(true);
 
         // stop button
         stopButton = (Button) findViewById(R.id.button2);
@@ -197,7 +197,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                     Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
                 connectButton.setEnabled(true);
-                //startButton.setEnabled(false);
+                startButton.setEnabled(true);
                 stopButton.setEnabled(false);
             }
         });
