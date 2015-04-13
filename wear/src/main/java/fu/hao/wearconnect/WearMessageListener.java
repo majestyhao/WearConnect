@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -23,6 +24,7 @@ import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.Wearable;
+import android.view.WindowManager;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -48,12 +50,16 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
         private GoogleApiClient mApiClient;
 
+    private WindowManager mWindowManager;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wear_message_listener);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initGoogleApiClient();
+        mWindowManager = getWindow().getWindowManager();
     }
 
     @Override
@@ -179,11 +185,12 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 //        }
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        accelerometer = sensorManager
-                .getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        //accelerometer = sensorManager
+          //      .getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), SensorManager.SENSOR_DELAY_FASTEST);
 
         try {
             File sdcard = Environment.getExternalStorageDirectory();
@@ -290,12 +297,13 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
 
     private SensorManager sensorManager;
-    Sensor accelerometer;
+    //Sensor accelerometer;
     //SensorListener fastestListener;
 
     float[] acceleration = new float[3];
     float[] rotationRate = new float[3];
     //float[] magneticField;
+    //float[] rotationVector = new float[4];
 
 
     private FileOutputStream fOut;
@@ -401,6 +409,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 //                magneticField[1] = event.values[1];
 //                magneticField[2] = event.values[2];
 //            }
+            if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+                updateOrientation(event.values);
+                //rotationVector = event.values;
+            }
 
             if (isFirstSet) {
                 startTime = System.currentTimeMillis();
@@ -415,12 +427,66 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         }
     }
 
+    float[] orientation = new float[3];
+
+    private void updateOrientation(float[] rotationVector) {
+        float[] rotationMatrix = new float[9];
+        SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector);
+
+        // By default, remap the axes as if the front of the
+        // device screen was the instrument panel.
+        int worldAxisForDeviceAxisX = SensorManager.AXIS_X;
+        int worldAxisForDeviceAxisY = SensorManager.AXIS_Z;
+        //int worldAxisForDeviceAxisZ = SensorManager.AXIS_Y;
+
+        // Adjust the rotation matrix for the device orientation
+        int screenRotation = mWindowManager.getDefaultDisplay().getRotation();
+        if (screenRotation == Surface.ROTATION_0) {
+            worldAxisForDeviceAxisX = SensorManager.AXIS_X;
+            worldAxisForDeviceAxisY = SensorManager.AXIS_Z;
+            //worldAxisForDeviceAxisZ = SensorManager.AXIS_Y;
+        } else if (screenRotation == Surface.ROTATION_90) {
+            worldAxisForDeviceAxisX = SensorManager.AXIS_Z;
+            worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_X;
+           // worldAxisForDeviceAxisZ = SensorManager.AXIS_Y;
+        } else if (screenRotation == Surface.ROTATION_180) {
+            worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_X;
+            worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_Z;
+        } else if (screenRotation == Surface.ROTATION_270) {
+            worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_Z;
+            worldAxisForDeviceAxisY = SensorManager.AXIS_X;
+            //worldAxisForDeviceAxisZ = SensorManager.AXIS_Y;
+        }
+
+        float[] adjustedRotationMatrix = new float[9];
+        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisForDeviceAxisX,
+                worldAxisForDeviceAxisY, adjustedRotationMatrix);
+
+        // Transform rotation matrix into azimuth/pitch/roll
+
+        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
+
+//        // Convert radians to degrees
+//        float pitch = orientation[1] * -57;
+//        float roll = orientation[2] * -57;
+//        float yaw = orientation[3] * -57;
+
+    }
+
     private void save() {
-        Log.d(TAG, currentTime - startTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
-        + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
+        //Log.d(TAG, currentTime - startTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
+       // + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + ","
+       // + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + '\n');
+              //  + rotationVector[0] + ',' + rotationVector[1] + ',' + rotationVector[2] + ',' + rotationVector[3] + '\n');
+                //+ "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
+
         //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
+
         myPrintWriter.write(currentTime - startTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
-                + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
+                //+ "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
+                + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + ","
+                + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + '\n');
+                //+ rotationVector[0] + ',' + rotationVector[1] + ',' + rotationVector[2] + ',' + rotationVector[3] + '\n');
         //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
     }
 
