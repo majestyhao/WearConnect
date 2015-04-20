@@ -188,7 +188,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         //accelerometer = sensorManager
           //      .getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_FASTEST);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), SensorManager.SENSOR_DELAY_FASTEST);
 
@@ -394,7 +394,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
     public void onSensorChanged(SensorEvent event) {
         //samplingRateCal();
         if (isStreaming) {
-            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
                 acceleration = event.values;
             }
 
