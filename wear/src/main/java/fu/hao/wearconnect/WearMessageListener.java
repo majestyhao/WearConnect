@@ -97,13 +97,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Log.d(TAG, fileName);
             validateMicAvailability();
             thread = new Thread(new Runnable() {
-
-
                 public void run() {
                     startRecording();
                 }
             });
-
             thread.start();
             //startRecording();
             startSensorListeners();
@@ -244,62 +241,47 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
     private static final int RECORDER_SAMPLERATE = 8000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private AudioRecord recorder = null;
 
-
-    private int bufferSize;
+    int bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE , AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT);
+    AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+            RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+            RECORDER_AUDIO_ENCODING, bufferSize) ;
     private void startRecording() {
-        bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE , AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
-        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
-                RECORDER_AUDIO_ENCODING, bufferSize) ;
-
         recorder.startRecording();
         isRecording = true;
-        while (isRecording) {
-            lastLevel = readAudioBuffer();
-            if (!isRecording) {
-                recorder.stop();
-                recorder.release();
-                recorder = null;
-                Log.d(TAG, "Recorder Stopped!");
-                break;
-            }
-        }
-    }
-
-    /**
-     * Functionality that gets the sound level out of the sample
-     */
-    private float readAudioBuffer() {
         short[] buffer = new short[bufferSize];
+        int bufferReadResult;
+        while (isRecording) {
 
-        int bufferReadResult = 1;
-        // Sense the voice...
-        bufferReadResult = recorder.read(buffer, 0, bufferSize);
-        double sumLevel = 0;
-        try {
-            if (recorder != null) {
+            // Sense the voice...
+            bufferReadResult = recorder.read(buffer, 0, bufferSize);
+            double sumLevel = 0;
+            try {
+                if (recorder != null) {
 
-                for (int i = 0; i < bufferReadResult; i++) {
-                    sumLevel += buffer[i];
+                    for (int i = 0; i < bufferReadResult; i++) {
+                        sumLevel += buffer[i];
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return (float)Math.abs((sumLevel / bufferReadResult));
 
+            lastLevel = (float)Math.abs((sumLevel / bufferReadResult));
+        }
+            recorder.stop();
+            //recorder.release();
+            Log.d(TAG, "Recorder Stopped!");
     }
 
     private boolean isRecording;
 
     private void stopRecording() {
         // stops the recording activity
-        if (null != recorder) {
+
             isRecording=false;
-        }
+
 //            File sdcard = Environment.getExternalStorageDirectory();
 //            File dir = new File(sdcard.getAbsolutePath() + "/SensorData/");
 //            if (!dir.exists()) {
@@ -639,11 +621,11 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         Log.d(TAG, String.valueOf(lastLevel));
                 //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
 
-        myPrintWriter.write(currentTime - startTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
+        myPrintWriter.write(currentTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
                 //+ "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
                 + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + ","
                 + lastLevel + ","
-                + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + "," + currentTime + '\n');
+                + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + '\n');
                 //+ rotationVector[0] + ',' + rotationVector[1] + ',' + rotationVector[2] + ',' + rotationVector[3] + '\n');
         //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
     }

@@ -281,7 +281,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         mRecorder.start();
 
-        Log.e(LOG_TAG, "Start Recording!" + System.currentTimeMillis());
+        mAdapter.add(fileName + " Start Recording! " + System.currentTimeMillis());
+        mAdapter.notifyDataSetChanged();
+        Log.e(LOG_TAG, fileName + " start: " + System.currentTimeMillis());
+
     }
 
     private void stopRecording() {
