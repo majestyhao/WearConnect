@@ -250,49 +250,45 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
 
+    private static final String LOG_TAG = "AudioRecordTest";
 
-        private static final String LOG_TAG = "AudioRecordTest";
+
+    private MediaRecorder mRecorder = null;
+
+    private void onRecord(boolean start) {
+        if (start) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    }
 
 
-        private MediaRecorder mRecorder = null;
+    private void startRecording() {
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        File sdcard = Environment.getExternalStorageDirectory();
+        File dir = new File(sdcard.getAbsolutePath() + "/CCS_Dataset/");
+        mRecorder.setOutputFile(dir + "/" + fileName + ".mp4");
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 
-        private MediaPlayer mPlayer = null;
-
-        private void onRecord(boolean start) {
-            if (start) {
-                startRecording();
-            } else {
-                stopRecording();
-            }
+        try {
+            mRecorder.prepare();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "prepare() failed");
         }
 
+        mRecorder.start();
+        Log.e(LOG_TAG, "Start Recording!");
+    }
 
-
-        private void startRecording() {
-            mRecorder = new MediaRecorder();
-            mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            File sdcard = Environment.getExternalStorageDirectory();
-            File dir = new File(sdcard.getAbsolutePath() + "/CCS_Dataset/");
-            mRecorder.setOutputFile(dir + "/" + fileName + ".mp4");
-            mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-
-            try {
-                mRecorder.prepare();
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "prepare() failed");
-            }
-
-            mRecorder.start();
-            Log.e(LOG_TAG, "Start Recording!");
-        }
-
-        private void stopRecording() {
-            Log.e(LOG_TAG, "Stop Recording!");
-            mRecorder.stop();
-            mRecorder.release();
-            mRecorder = null;
-        }
+    private void stopRecording() {
+        Log.e(LOG_TAG, "Stop Recording!");
+        mRecorder.stop();
+        mRecorder.release();
+        mRecorder = null;
+    }
 
     @Override
     public void onPause() {
@@ -301,14 +297,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             mRecorder.release();
             mRecorder = null;
         }
-
-        if (mPlayer != null) {
-            mPlayer.release();
-            mPlayer = null;
-        }
     }
+}
 
-        }
 
 
 
