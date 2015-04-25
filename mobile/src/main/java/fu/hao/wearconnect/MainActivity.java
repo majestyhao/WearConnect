@@ -280,7 +280,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
 
         mRecorder.start();
-        Log.e(LOG_TAG, "Start Recording!");
+
+        Log.e(LOG_TAG, "Start Recording!" + System.currentTimeMillis());
     }
 
     private void stopRecording() {

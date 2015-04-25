@@ -642,7 +642,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         myPrintWriter.write(currentTime - startTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
                 //+ "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
                 + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + ","
-                //+ lastLevel + ","
+                + lastLevel + ","
                 + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + "," + currentTime + '\n');
                 //+ rotationVector[0] + ',' + rotationVector[1] + ',' + rotationVector[2] + ',' + rotationVector[3] + '\n');
         //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
