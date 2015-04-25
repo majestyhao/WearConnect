@@ -7,6 +7,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -24,11 +27,11 @@ import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.Wearable;
-import android.view.WindowManager;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -51,6 +54,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         private GoogleApiClient mApiClient;
 
     private WindowManager mWindowManager;
+
 
 
     @Override
@@ -91,7 +95,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Log.d(TAG, "onMessageReceived: " + STREAMING);
             fileName = new String(messageEvent.getData());
             Log.d(TAG, fileName);
+            //startRecording();
+
             startSensorListeners();
+
             // streamingFlag = true;
             //} else {
             //   stopSensorListeners();
@@ -99,7 +106,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             //}
         } else if (messageEvent.getPath().equalsIgnoreCase(FILE_TRANSFER)) {
             Log.d(TAG, "onMessageReceived: " + FILE_TRANSFER);
+            stopRecording();
             stopSensorListeners();
+
+
         } else if (messageEvent.getPath().equalsIgnoreCase(START_ACTIVITY)
                 || messageEvent.getPath().equalsIgnoreCase(WEAR_MESSAGE_PATH)) {
             Log.d(TAG, "onMessageReceived: " + START_ACTIVITY);
@@ -170,6 +180,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
     private void startSensorListeners() {
         Log.d(TAG, "startSensorListeners");
+
+
+            isFirstSet = true;
+
 //        Intent sensorCtr = new Intent(WearMessageListenerService.this, SensorStreamingService.class);
 //        sensorCtr.putExtra("filename", fileName);
 //        startService(sensorCtr);
@@ -215,7 +229,177 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             Log.d(TAG, "Failed to create the file..");
         }
+
     }
+
+    private static final int RECORDER_SAMPLERATE = 8000;
+    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    private AudioRecord recorder = null;
+    private Thread recordingThread = null;
+    private boolean isRecording = false;
+
+
+    int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+    int BytesPerElement = 2; // 2 bytes in 16bit format
+
+    private int bufferSize;
+    private void startRecording() {
+        validateMicAvailability();
+        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+                RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
+
+        recorder.startRecording();
+        isRecording = true;
+        recordingThread = new Thread(new Runnable() {
+            public void run() {
+                writeAudioDataToFile();
+            }
+        }, "AudioRecorder Thread");
+        recordingThread.start();
+    }
+
+    //convert short to byte
+    private byte[] short2byte(short[] sData) {
+        int shortArrsize = sData.length;
+        byte[] bytes = new byte[shortArrsize * 2];
+        for (int i = 0; i < shortArrsize; i++) {
+            bytes[i * 2] = (byte) (sData[i] & 0x00FF);
+            bytes[(i * 2) + 1] = (byte) (sData[i] >> 8);
+            sData[i] = 0;
+        }
+        return bytes;
+
+    }
+
+    private void writeAudioDataToFile() {
+        // Write the output audio in byte
+
+        String filePath = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/SensorData/" + fileName + ".wav";
+//        short sData[] = new short[BufferElements2Rec];
+//
+//        FileOutputStream os = null;
+//        try {
+//            os = new FileOutputStream(filePath);
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+        bufferSize =
+
+        while (isRecording) {
+            short[] buffer = new short[bufferSize];
+
+            int bufferReadResult = 1;
+
+            if (audio != null) {
+
+                // Sense the voice...
+                bufferReadResult = audio.read(buffer, 0, bufferSize);
+                double sumLevel = 0;
+                for (int i = 0; i < bufferReadResult; i++) {
+                    sumLevel += buffer[i];
+                }
+                lastLevel = Math.abs((sumLevel / bufferReadResult));
+
+//            // gets the voice output from microphone to byte format
+//
+//            //recorder.read(sData, 0, BufferElements2Rec);
+//            //System.out.println("Short writing to file" + sData.toString());
+//            try {
+//                // // writes the data to file from buffer
+//                // // stores the voice buffer
+//                byte bData[] = short2byte(sData);
+//                os.write(bData, 0, BufferElements2Rec * BytesPerElement);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+        }
+        try {
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopRecording() {
+        // stops the recording activity
+        if (null != recorder) {
+            isRecording = false;
+            recorder.stop();
+            recorder.release();
+            recorder = null;
+            recordingThread = null;
+            Log.d(TAG, "Recorder Stopped!");
+        }
+            File sdcard = Environment.getExternalStorageDirectory();
+            File dir = new File(sdcard.getAbsolutePath() + "/SensorData/");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            } // Create folder if needed
+            final File file = new File(dir,
+                    fileName + ".wav");
+            if (file.exists()) {
+                Log.d(TAG, "File Found! Audio!");
+
+                // Read the text file into a byte array
+                FileInputStream fileInputStream = null;
+                byte[] bFile = new byte[(int) file.length()];
+                try {
+                    fileInputStream = new FileInputStream(file);
+                    fileInputStream.read(bFile);
+                    fileInputStream.close();
+                } catch (Exception e) {
+                }
+
+                // Create an Asset from the byte array, and send it via the DataApi
+                Asset asset = Asset.createFromBytes(bFile);
+                PutDataMapRequest request = PutDataMapRequest.create("/audio");
+                DataMap map = request.getDataMap();
+                map.putLong("time", new Date().getTime()); // MOST IMPORTANT LINE FOR TIMESTAMP
+                map.putAsset("com.example.company.key.AUDIO", asset);
+                Wearable.DataApi.putDataItem(mApiClient, request.asPutDataRequest());
+                Log.d(TAG, "File Sent! AUDIO");
+                Toast.makeText(getBaseContext(), "File Sent! AUDIO!", Toast.LENGTH_SHORT).show();
+                file.delete();
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (NullPointerException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            } else {
+                Log.d(TAG, "No Such File! Audio!");
+            }
+
+
+
+    }
+
+    private void validateMicAvailability()  {
+        AudioRecord recorder =
+                new AudioRecord(MediaRecorder.AudioSource.MIC, 44100,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_DEFAULT, 44100);
+
+        if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED)
+            Log.e(TAG,"Mic didn't successfully initialized");
+
+
+        recorder.startRecording();
+        Log.e(TAG,"Mic initialized!");
+        if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+            recorder.stop();
+            Log.e(TAG,"Mic is in use and can't be accessed");
+        }
+        recorder.stop();
+        recorder.release();
+    }
+
+
 
     private void stopSensorListeners() {
 
@@ -223,6 +407,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         isStreaming = false;
 
         try {
+            myPrintWriter.write(String.valueOf(startTime) + ',' + String.valueOf(currentTime) + '\n');
             myOutWriter.close();
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -417,6 +602,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             if (isFirstSet) {
                 startTime = System.currentTimeMillis();
                 isFirstSet = false;
+                startRecording();
             }
 
             currentTime = System.currentTimeMillis();

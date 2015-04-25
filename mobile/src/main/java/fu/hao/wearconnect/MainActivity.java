@@ -3,6 +3,8 @@ package fu.hao.wearconnect;
 // https://www.binpress.com/tutorial/a-guide-to-the-android-wear-message-api/152
 
 import android.app.Activity;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
@@ -37,6 +39,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -174,9 +177,15 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                                                } finally {
                                                    stopFlag = false;
                                                }
+                                               boolean mStartRecording = true;
+                                               onRecord(mStartRecording);
+
+
                                                startButton.setEnabled(false);
                                                stopButton.setEnabled(true);
                                            }
+
+
                                        }
         );
         //startButton.setEnabled(true);
@@ -186,6 +195,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         stopButton.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
+
                 // stop recording the sensor data
                 try {
                     stopFlag = true;
@@ -199,7 +209,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 connectButton.setEnabled(true);
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
+                stopRecording();
             }
+
+
         });
         stopButton.setEnabled(false);
     }
@@ -237,6 +250,70 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
 
+
+        private static final String LOG_TAG = "AudioRecordTest";
+
+
+        private MediaRecorder mRecorder = null;
+
+        private MediaPlayer mPlayer = null;
+
+        private void onRecord(boolean start) {
+            if (start) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+
+
+
+        private void startRecording() {
+            mRecorder = new MediaRecorder();
+            mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            File sdcard = Environment.getExternalStorageDirectory();
+            File dir = new File(sdcard.getAbsolutePath() + "/CCS_Dataset/");
+            mRecorder.setOutputFile(dir + "/" + fileName + ".mp4");
+            mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+
+            try {
+                mRecorder.prepare();
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "prepare() failed");
+            }
+
+            mRecorder.start();
+            Log.e(LOG_TAG, "Start Recording!");
+        }
+
+        private void stopRecording() {
+            Log.e(LOG_TAG, "Stop Recording!");
+            mRecorder.stop();
+            mRecorder.release();
+            mRecorder = null;
+        }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mRecorder != null) {
+            mRecorder.release();
+            mRecorder = null;
+        }
+
+        if (mPlayer != null) {
+            mPlayer.release();
+            mPlayer = null;
+        }
+    }
+
+        }
+
+
+
+
+
 //    @Override
 //    public void onMessageReceived(final MessageEvent messageEvent) {
 //        runOnUiThread( new Runnable() {
@@ -248,4 +325,3 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 //            }
 //        });
 //    }
-}
