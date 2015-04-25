@@ -1,38 +1,24 @@
 package fu.hao.wearconnect;
 
-import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.wearable.Asset;
-import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.PutDataMapRequest;
-import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.Date;
-import java.util.List;
+
 
 public class WearMessageListenerService extends WearableListenerService {
     private static final String TAG = "WearableListenerService";

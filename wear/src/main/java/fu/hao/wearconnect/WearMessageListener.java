@@ -40,7 +40,7 @@ import java.util.Date;
 
 
 public class WearMessageListener extends Activity implements MessageApi.MessageListener, GoogleApiClient.ConnectionCallbacks, SensorEventListener{
-        private static final String TAG = "WearableListenerService";
+        private static final String TAG = "WearableListener";
         private static final String START_ACTIVITY = "/start_activity";
         private static final String WEAR_MESSAGE_PATH = "/message";
         private static final String STREAMING = "/streaming";
@@ -95,7 +95,6 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Log.d(TAG, "onMessageReceived: " + STREAMING);
             fileName = new String(messageEvent.getData());
             Log.d(TAG, fileName);
-            validateMicAvailability();
             thread = new Thread(new Runnable() {
                 public void run() {
                     startRecording();
@@ -112,8 +111,8 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             //}
         } else if (messageEvent.getPath().equalsIgnoreCase(FILE_TRANSFER)) {
             Log.d(TAG, "onMessageReceived: " + FILE_TRANSFER);
-            stopSensorListeners();
             stopRecording();
+            stopSensorListeners();
         } else if (messageEvent.getPath().equalsIgnoreCase(START_ACTIVITY)
                 || messageEvent.getPath().equalsIgnoreCase(WEAR_MESSAGE_PATH)) {
             Log.d(TAG, "onMessageReceived: " + START_ACTIVITY);
@@ -159,7 +158,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
     }
 
     // private SensorManager sensorManager;
-    private PutDataMapRequest sensorData;
+    //private PutDataMapRequest sensorData;
 
 //    @Override // SensorEventListener
 //    public final void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -248,7 +247,12 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             RECORDER_SAMPLERATE, RECORDER_CHANNELS,
             RECORDER_AUDIO_ENCODING, bufferSize) ;
     private void startRecording() {
+
         recorder.startRecording();
+        Log.e(TAG,"Mic initialized!");
+        if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+            Log.e(TAG,"Mic is in use and can't be accessed");
+        }
         isRecording = true;
         short[] buffer = new short[bufferSize];
         int bufferReadResult;
@@ -271,8 +275,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             lastLevel = (float)Math.abs((sumLevel / bufferReadResult));
         }
             recorder.stop();
-            //recorder.release();
-            Log.d(TAG, "Recorder Stopped!");
+        if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED)
+            Log.e(TAG,"Mic didn't stop!");
+        //recorder.release();
+            Log.e(TAG, "Recorder Stopped!");
     }
 
     private boolean isRecording;
@@ -327,25 +333,6 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
     }
 
-    private void validateMicAvailability()  {
-        AudioRecord recorder =
-                new AudioRecord(MediaRecorder.AudioSource.MIC, 44100,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_DEFAULT, 44100);
-
-        if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED)
-            Log.e(TAG,"Mic didn't successfully initialized");
-
-
-        recorder.startRecording();
-        Log.e(TAG,"Mic initialized!");
-        if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
-            recorder.stop();
-            Log.e(TAG,"Mic is in use and can't be accessed");
-        }
-        recorder.stop();
-        recorder.release();
-    }
 
 
 

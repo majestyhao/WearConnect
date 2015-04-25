@@ -195,7 +195,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         stopButton.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
-
+                boolean mStartRecording = false;
+                onRecord(mStartRecording);
                 // stop recording the sensor data
                 try {
                     stopFlag = true;
@@ -209,7 +210,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 connectButton.setEnabled(true);
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
-                stopRecording();
+
             }
 
 
@@ -257,13 +258,24 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private void onRecord(boolean start) {
         if (start) {
-            startRecording();
+            thread = new Thread(new Runnable() {
+                public void run() {
+                    startRecording();
+                }
+            });
+            mAdapter.add(fileName + " Start Recording! " + System.currentTimeMillis());
+            mAdapter.notifyDataSetChanged();
+            thread.start();
         } else {
             stopRecording();
         }
     }
 
-
+    private Thread thread;
+    FileOutputStream fOut;
+    OutputStreamWriter myOutWriter;
+    BufferedWriter myBufferedWriter;
+    PrintWriter myPrintWriter;
     private void startRecording() {
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -280,18 +292,81 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
 
         mRecorder.start();
+        isRecording = true;
 
-        mAdapter.add(fileName + " Start Recording! " + System.currentTimeMillis());
-        mAdapter.notifyDataSetChanged();
+
         Log.e(LOG_TAG, fileName + " start: " + System.currentTimeMillis());
+
+
+
+        try {
+            if (!dir.exists()) {dir.mkdirs();} // Create folder if needed
+            //myFile = new File("/sdcard/ResearchData/" + txtData.getText() + ".txt");
+            final File myFile = new File(dir, "Audio" + fileName);
+            if (myFile.exists()) myFile.delete();
+            if (myFile.createNewFile())
+                Log.d(TAG, "Successfully created the file!" + "Audio" + fileName);
+            else
+                Log.e(TAG, "Failed to create the file..");
+
+            fOut = new FileOutputStream(myFile);
+            myOutWriter = new OutputStreamWriter(fOut);
+            myBufferedWriter = new BufferedWriter(myOutWriter);
+            myPrintWriter = new PrintWriter(myBufferedWriter);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create the file..");
+        }
+
+        while (isRecording) {
+            // Sense the voice...
+            try {
+                if (mRecorder != null) {
+                    lastLevel = (float)getAmplitude();
+                    myPrintWriter.write(String.valueOf(lastLevel) + ',');
+                    Log.d(TAG, String.valueOf(lastLevel));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        mRecorder.stop();
+        mRecorder.release();
+        mRecorder = null;
+        Log.d(TAG, "Recorder Stopped!");
+        try {
+            // myPrintWriter.write(String.valueOf(startTime) + ',' + String.valueOf(currentTime) + '\n');
+            myOutWriter.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        try {
+            fOut.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    boolean isRecording;
+    float lastLevel;
+    public double getAmplitude() {
+        if (mRecorder != null)
+            return  mRecorder.getMaxAmplitude();
+        else
+            return 0;
 
     }
 
     private void stopRecording() {
-        Log.e(LOG_TAG, "Stop Recording!");
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
+       isRecording = false;
     }
 
     @Override
