@@ -96,7 +96,16 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             fileName = new String(messageEvent.getData());
             Log.d(TAG, fileName);
             validateMicAvailability();
-            startRecording();
+            thread = new Thread(new Runnable() {
+
+
+                public void run() {
+                    startRecording();
+                }
+            });
+
+            thread.start();
+            //startRecording();
             startSensorListeners();
 
             // streamingFlag = true;
@@ -230,6 +239,8 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
     }
 
+    private Thread thread;
+
     private static final int RECORDER_SAMPLERATE = 8000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
@@ -245,6 +256,17 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
                 RECORDER_AUDIO_ENCODING, bufferSize) ;
 
         recorder.startRecording();
+        isRecording = true;
+        while (isRecording) {
+            lastLevel = readAudioBuffer();
+            if (!isRecording) {
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+                Log.d(TAG, "Recorder Stopped!");
+                break;
+            }
+        }
     }
 
     /**
@@ -268,17 +290,15 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             e.printStackTrace();
         }
         return (float)Math.abs((sumLevel / bufferReadResult));
+
     }
 
-
+    private boolean isRecording;
 
     private void stopRecording() {
         // stops the recording activity
         if (null != recorder) {
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-            Log.d(TAG, "Recorder Stopped!");
+            isRecording=false;
         }
 //            File sdcard = Environment.getExternalStorageDirectory();
 //            File dir = new File(sdcard.getAbsolutePath() + "/SensorData/");
@@ -489,40 +509,40 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 //        sensorManager.unregisterListener(fastestListener);
 //    }
 
-    private int numSamples;
-    private boolean isActive = false;
-    private double samplingRate = 0.0;
+//    private int numSamples;
+//    private boolean isActive = false;
+//    private double samplingRate = 0.0;
 
 
 
-    public double getSamplingRate() {
-        return samplingRate;
-    }
-
-//    public void startRecording() {
-//        startTime = System.currentTimeMillis();
-//        numSamples = 0;
-//        isActive = true;
+//    public double getSamplingRate() {
+//        return samplingRate;
 //    }
-
-    public boolean isActive() {
-        return isActive;
-    }
+//
+////    public void startRecording() {
+////        startTime = System.currentTimeMillis();
+////        numSamples = 0;
+////        isActive = true;
+////    }
+//
+//    public boolean isActive() {
+//        return isActive;
+//    }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
-
-    private void samplingRateCal() {
-        if (isActive) {
-            numSamples++;
-            long now = System.currentTimeMillis();
-            if (now >= startTime + 5000) {
-                samplingRate = numSamples / ((now - startTime) / 1000.0);
-                isActive = false;
-            }
-        }
-    }
+//
+//    private void samplingRateCal() {
+//        if (isActive) {
+//            numSamples++;
+//            long now = System.currentTimeMillis();
+//            if (now >= startTime + 5000) {
+//                samplingRate = numSamples / ((now - startTime) / 1000.0);
+//                isActive = false;
+//            }
+//        }
+//    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -556,7 +576,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             } else {
                 currentTime = System.currentTimeMillis();
             }
-            lastLevel = readAudioBuffer();
+           //lastLevel = readAudioBuffer();
 
            // for (int i = 0; i < 1; i++) {
                 save();
@@ -622,8 +642,8 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         myPrintWriter.write(currentTime - startTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
                 //+ "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
                 + "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + ","
-                + lastLevel + ","
-                + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + currentTime + '\n');
+                //+ lastLevel + ","
+                + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + "," + currentTime + '\n');
                 //+ rotationVector[0] + ',' + rotationVector[1] + ',' + rotationVector[2] + ',' + rotationVector[3] + '\n');
         //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
     }
