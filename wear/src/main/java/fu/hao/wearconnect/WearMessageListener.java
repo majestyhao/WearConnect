@@ -95,8 +95,10 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Log.d(TAG, "onMessageReceived: " + STREAMING);
             fileName = new String(messageEvent.getData());
             Log.d(TAG, fileName);
+            final int SAMPLE_DELAY = 75;
             thread = new Thread(new Runnable() {
                 public void run() {
+                    try{Thread.sleep(SAMPLE_DELAY);}catch(InterruptedException ie){ie.printStackTrace();}
                     startRecording();
                 }
             });
@@ -261,18 +263,21 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             // Sense the voice...
             bufferReadResult = recorder.read(buffer, 0, bufferSize);
             double sumLevel = 0;
+            float maxLevel = 0;
             try {
                 if (recorder != null) {
-
                     for (int i = 0; i < bufferReadResult; i++) {
-                        sumLevel += buffer[i];
+                        //sumLevel += buffer[i];
+                        if (buffer[i] > maxLevel)
+                            maxLevel = buffer[i];
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            lastLevel = (float)Math.abs((sumLevel / bufferReadResult));
+            //lastLevel = (float)Math.abs((sumLevel / bufferReadResult));
+            lastLevel = maxLevel;
         }
             recorder.stop();
         if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED)
