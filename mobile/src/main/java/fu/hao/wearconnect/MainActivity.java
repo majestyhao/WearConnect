@@ -324,7 +324,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             try {
                 if (mRecorder != null) {
                     lastLevel = (float)getAmplitude();
-                    myPrintWriter.write(System.currentTimeMillis() + ',' + String.valueOf(lastLevel) + '\n');
+                    myPrintWriter.write(System.currentTimeMillis() + ", " + String.valueOf(lastLevel) + '\n');
                     Log.d(TAG, String.valueOf(lastLevel));
                 }
             } catch (Exception e) {
