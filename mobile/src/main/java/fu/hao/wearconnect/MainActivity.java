@@ -258,8 +258,10 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
     private void onRecord(boolean start) {
         if (start) {
+            final int SAMPLE_DELAY = 75;
             thread = new Thread(new Runnable() {
                 public void run() {
+                    try{Thread.sleep(SAMPLE_DELAY);}catch(InterruptedException ie){ie.printStackTrace();}
                     startRecording();
                 }
             });
@@ -292,7 +294,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
 
         mRecorder.start();
-        isRecording = true;
 
 
         Log.e(LOG_TAG, fileName + " start: " + System.currentTimeMillis());
@@ -318,7 +319,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             Log.e(TAG, "Failed to create the file..");
         }
 
-        while (isRecording) {
+        while (!thread.isInterrupted()) {
             // Sense the voice...
             try {
                 if (mRecorder != null) {
@@ -355,7 +356,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         }
     }
 
-    boolean isRecording;
     float lastLevel;
     public double getAmplitude() {
         if (mRecorder != null)
@@ -366,12 +366,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     private void stopRecording() {
-       isRecording = false;
+        thread.interrupt();
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        thread.interrupt();
+        thread = null;
         if (mRecorder != null) {
             mRecorder.release();
             mRecorder = null;
