@@ -381,11 +381,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 }
 
-
-
-
-
-
 //    @Override
 //    public void onMessageReceived(final MessageEvent messageEvent) {
 //        runOnUiThread( new Runnable() {
