@@ -95,7 +95,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
             Log.d(TAG, "onMessageReceived: " + STREAMING);
             fileName = new String(messageEvent.getData());
             Log.d(TAG, fileName);
-            final int SAMPLE_DELAY = 75;
+            final int SAMPLE_DELAY = 10;//75;
             thread = new Thread(new Runnable() {
                 public void run() {
                     try{Thread.sleep(SAMPLE_DELAY);}catch(InterruptedException ie){ie.printStackTrace();}
@@ -239,7 +239,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
     private Thread thread;
 
-    private static final int RECORDER_SAMPLERATE = 8000;
+    private static final int RECORDER_SAMPLERATE = 16000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
@@ -259,13 +259,12 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
         short[] buffer = new short[bufferSize];
         int bufferReadResult;
         while (isRecording) {
-
-            // Sense the voice...
-            bufferReadResult = recorder.read(buffer, 0, bufferSize);
-            double sumLevel = 0;
+            //double sumLevel = 0;
             float maxLevel = 0;
             try {
                 if (recorder != null) {
+                    // Sense the voice...
+                    bufferReadResult = recorder.read(buffer, 0, bufferSize);
                     for (int i = 0; i < bufferReadResult; i++) {
                         //sumLevel += buffer[i];
                         if (buffer[i] > maxLevel)
@@ -278,6 +277,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
 
             //lastLevel = (float)Math.abs((sumLevel / bufferReadResult));
             lastLevel = maxLevel;
+            Log.e(TAG, String.valueOf(lastLevel));
         }
             recorder.stop();
         if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED)
@@ -610,7 +610,7 @@ public class WearMessageListener extends Activity implements MessageApi.MessageL
        // + orientation[0] * -57 + ',' + orientation[1] * -57 + ',' + orientation[2] * -57 + '\n');
               //  + rotationVector[0] + ',' + rotationVector[1] + ',' + rotationVector[2] + ',' + rotationVector[3] + '\n');
                 //+ "," + rotationRate[0] + "," + rotationRate[1] + "," + rotationRate[2] + "\n");
-        Log.d(TAG, String.valueOf(lastLevel));
+        //Log.d(TAG, String.valueOf(lastLevel));
                 //+ "," + magneticField[0] + "," + magneticField[1] + "," + magneticField[2] + "\n");
 
         myPrintWriter.write(currentTime + "," + acceleration[0] + "," + acceleration[1] + "," + acceleration[2]
